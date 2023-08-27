@@ -9,25 +9,26 @@ jQuery( function ( $ ) {
   $(document).on('click','.card-noticia .Ripple-parent,.card-noticia .card-body,.fd-name', function(event){
     event.stopPropagation();
     event.preventDefault();
-    console.log($(event.target).closest('.card').attr('class'));
+    //console.log($(event.target).closest('.card').attr('class'));
     var $this = $(event.target).closest('.card');
-    console.log('CC:'+$this.data("idnoticia"));
+    //console.log('CC:'+$this.data("idnoticia"));
     $('#myModal').modal('toggle',{ idnoticia: $this.data("idnoticia")});
   });
   
-  $('#myModal').on('hidden.bs.modal', function (e) {
+  $(document).on('hidden.bs.modal','#myModal', function (e) {
     var modal = $(this)
     modal.find('.contentHtml').html("")
     modal.find('h3.modalNoticia').html("")
     modal.find('.date.modalNoticia span').html("")
+    modal.find('.btn.guid').attr('href',"")
   })
   
-  $('#myModal').on('shown.bs.modal', function (event) {
-    var button = $(event.relatedTarget); // Button that triggered the modal
-    var idnoticia = '0'; 
-    
+  $(document).on('shown.bs.modal','#myModal', function (event) {
+    var button = $(event.relatedTarget);
+    var idnoticia = '0';
     var modal = $(this)
-    //modal.find('.modal-title').text('New message to ');
+    modal.find('.contentHtml').html('<div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div>');
+    
     $.ajax({
         url: lasts.ajaxurl,
         type: "POST",
@@ -36,9 +37,7 @@ jQuery( function ( $ ) {
           security: lasts.security
         },  
         success: function (response) {
-            console.log(response);
             if (response) {
-                console.log(response['data']);
                 modal.find('h3.modalNoticia').html(response['data'].title);
                 modal.find('.contentHtml').html(response['data'].content);
                 modal.find('.contentHtml .ds8-rp-container').remove();
@@ -47,8 +46,6 @@ jQuery( function ( $ ) {
             }
         }
     });
-    
-    
   });
   
 });

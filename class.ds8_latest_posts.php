@@ -23,9 +23,12 @@ class DS8_Latest_Posts {
             
             add_action('wp_enqueue_scripts', array($this, 'ds8_latest_posts_javascript'), 10);
             add_shortcode( 'ds8_latest_posts', array($this, 'shortcode') );
+            add_shortcode( 'ds8_latest_posts_ajax', array($this, 'shortcode_ajax') );
             
             add_action('wp_ajax_lasts_action', array($this, 'ajax_render_init_lasts'));
             add_action('wp_ajax_nopriv_lasts_action', array($this, 'ajax_render_init_lasts'));
+            add_action('wp_ajax_load_posts_action', array($this, 'ajax_render_load_posts'));
+            add_action('wp_ajax_nopriv_load_posts_action', array($this, 'ajax_render_load_posts'));
             add_filter('home_template', array($this,'load_cpt_template'), 10, 1);
             
         }
@@ -120,9 +123,56 @@ class DS8_Latest_Posts {
 
             $data = array('data' => array('content' => $body['content']['rendered'],
                           'title' => $body['title']['rendered'],
-                          'date' => $body['date'],
+                          //'date' => $body['date'],
+                          'date' => wp_date('F j, Y', rest_parse_date($body['date'])),
                           'guid' => $body['guid']['rendered']));
             wp_send_json($data);
+        }
+        
+        public static function ajax_render_load_posts() {
+            if (!check_ajax_referer('fd_security_nonce', 'security')) {
+              wp_send_json_error('Invalid security token sent.');
+              wp_die();
+            }
+
+            if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+              extract($_POST);
+            }else{
+              extract($_GET);
+            }
+
+            $defaults = array(
+                'per_page' => 4,
+                'categories' => '',
+                'view' => 'news'
+            );
+            
+            $atts = array('view' => $type, 'categories' => $categories, 'per_page' => $per_page);
+
+            $atts = wp_parse_args($atts, $defaults);
+            $view = $atts['view'];
+            unset($atts['view']);
+            $atts = array_filter($atts);
+            $params = http_build_query($atts) . "\n";
+            
+            $response = wp_remote_get( self::$url_api.'/wp-json/wp/v2/posts?'.$params); //offset=2&per_page=2' );
+            $total = wp_remote_retrieve_header( $response, 'X-WP-Total' );
+            $total_pages = wp_remote_retrieve_header( $response, 'X-WP-TotalPages' );
+            
+            $body = json_decode(wp_remote_retrieve_body( $response ),true);
+
+            ob_start();
+            if ($view === 'news') {
+              include('template-parts/latest-posts.php');
+            }else{
+              include('template-parts/latest-posts-cat.php');
+            }
+            
+            $html = ob_get_clean();
+
+            wp_send_json_success(array(
+                $html
+            ));
         }
         
         /**
@@ -182,6 +232,48 @@ class DS8_Latest_Posts {
             return ob_get_clean();
         }
         
+        public function shortcode_ajax($atts) {
+            $defaults = array(
+                'per_page' => 4,
+                'categories' => '',
+                'view' => 'news'
+            );
+
+            $atts = wp_parse_args($atts, $defaults);
+            $view = $atts['view'];
+            unset($atts['view']);
+            
+            if ($view === 'news') {
+              echo '<div class="news_ajax"><div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div></div>';
+            }else{
+              echo '<div class="dictamenes_ajax"><div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div></div>';
+            }
+            
+            ?>
+            <script>
+              jQuery( function ( $ ) {
+                var type = '<?php echo $view ?>';
+                var category = '<?php echo $atts['categories'] ?>';
+                var per_page = '<?php echo $atts['per_page'] ?>';
+                $.ajax({
+                    url: lasts.ajaxurl,
+                    type: "POST",
+                    data: {
+                      action: 'load_posts_action',
+                      security: lasts.security,
+                      type: type,
+                      categories: category,
+                      per_page: per_page
+                    },  
+                    success: function (response) {
+                        $('.'+type+'_ajax').html(response['data']);
+                    }
+                });
+              });
+            </script>
+            <?php
+        }
+        
         /**
 	 * Define the locale for this plugin for internationalization.
 	 *
@@ -213,13 +305,7 @@ class DS8_Latest_Posts {
         public function ds8_latest_posts_javascript(){
           
             wp_enqueue_style('cssapi-css', plugin_dir_url( __FILE__ ) . 'assets/css/cssapi.css', array(), DS8LATESTPOSTS_VERSION);
-            //wp_enqueue_style('bootstrap-css', plugin_dir_url( __FILE__ ) . 'assets/css/bootstrap-grid.min.css', array(), DS8LATESTPOSTS_VERSION);
-            //wp_enqueue_style('bootstrap-theme-css', plugin_dir_url( __FILE__ ) . 'assets/css/bootstrap-theme.css', array(), DS8LATESTPOSTS_VERSION);
-            
-            //wp_register_script( 'bootstrap.js', plugin_dir_url( __FILE__ ) . 'assets/js/bootstrap.js', array('jquery'), DS8LATESTPOSTS_VERSION, true );
-            //wp_enqueue_script( 'bootstrap.js' );
-            
-            wp_register_script('lasts.js', plugin_dir_url( __FILE__ ) . 'assets/js/lasts.js', array('jquery'), 3); //DS8LATESTPOSTS_VERSION);
+            wp_register_script('lasts.js', plugin_dir_url( __FILE__ ) . 'assets/js/lasts.js', array('jquery'), DS8LATESTPOSTS_VERSION);
                 $localize_script_args = array(
                     'ajaxurl'         => admin_url('admin-ajax.php'),
                     'security'        => wp_create_nonce( 'fd_security_nonce' )
@@ -256,7 +342,7 @@ class DS8_Latest_Posts {
 		if ( version_compare( $GLOBALS['wp_version'], DS8LATESTPOSTS_MINIMUM_WP_VERSION, '<' ) ) {
 			load_plugin_textdomain( 'ds8_latest_posts' );
                         
-			$message = '<strong>'.sprintf(esc_html__( 'FD Estadisticas %s requires WordPress %s or higher.' , 'ds8_latest_posts'), DS8LATESTPOSTS_VERSION, DS8LATESTPOSTS_MINIMUM_WP_VERSION ).'</strong> '.sprintf(__('Please <a href="%1$s">upgrade WordPress</a> to a current version, or <a href="%2$s">downgrade to version 2.4 of the Akismet plugin</a>.', 'ds8_latest_posts'), 'https://codex.wordpress.org/Upgrading_WordPress', 'https://wordpress.org/extend/plugins/ds8_latest_posts/download/');
+			$message = '<strong>'.sprintf(esc_html__( 'DS8 Lastest Posts %s requires WordPress %s or higher.' , 'ds8_latest_posts'), DS8LATESTPOSTS_VERSION, DS8LATESTPOSTS_MINIMUM_WP_VERSION ).'</strong> '.sprintf(__('Please <a href="%1$s">upgrade WordPress</a> to a current version, or <a href="%2$s">downgrade to version 2.4 of the Akismet plugin</a>.', 'ds8_latest_posts'), 'https://codex.wordpress.org/Upgrading_WordPress', 'https://wordpress.org/extend/plugins/ds8_latest_posts/download/');
 
 			DS8_Latest_Posts::bail_on_activation( $message );
 		} elseif ( ! empty( $_SERVER['SCRIPT_NAME'] ) && false !== strpos( $_SERVER['SCRIPT_NAME'], '/wp-admin/plugins.php' ) ) {
@@ -291,7 +377,7 @@ p {
 <?php
 		if ( $deactivate ) {
 			$plugins = get_option( 'active_plugins' );
-			$ds8_latest_posts = plugin_basename( DS8CALENDAR__PLUGIN_DIR . 'ds8_latest_posts.php' );
+			$ds8_latest_posts = plugin_basename( DS8LATESTPOSTS_PLUGIN_DIR . 'ds8_latest_posts.php' );
 			$update  = false;
 			foreach ( $plugins as $i => $plugin ) {
 				if ( $plugin === $ds8_latest_posts ) {

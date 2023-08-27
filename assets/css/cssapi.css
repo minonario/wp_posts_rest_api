@@ -370,3 +370,16 @@ button.close {
 .modal .modal-footer, .modal .modal-header {
     border: none;
 }
+
+
+.news_ajax {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+.news_ajax .spinner-border {
+    color: #09c;
+    width: 2.5rem;
+    height: 2.5rem;
+}

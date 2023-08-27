@@ -10,9 +10,13 @@
           foreach ($body as $post ) :
           $image = $post['_links']['wp:featuredmedia'];
           $response_media = wp_remote_get( $image[0]['href'] );
+          if ( is_wp_error( $response_media ) ) {
+            $body_media['guid']['rendered'] = '';
+          }else{
+            $body_media = json_decode(wp_remote_retrieve_body( $response_media ),true);
+          }
           $fecha = rest_parse_date($post['date']);
           $fecha = wp_date('F j, Y', $fecha);
-          $body_media     = json_decode(wp_remote_retrieve_body( $response_media ),true);
           ?>
           <div class="ds8-post col-sm-6 col-md-4 col-lg-3">
             <div class="card card-noticia" data-toggle="modal" target="#myModal" data-idnoticia="<?php echo $post['id']?>">

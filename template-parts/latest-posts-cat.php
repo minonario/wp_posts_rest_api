@@ -12,7 +12,11 @@
       foreach ($body as $post ) :
       $image = $post['_links']['wp:featuredmedia'];
       $response_media = wp_remote_get( $image[0]['href'] );
-      $body_media     = json_decode(wp_remote_retrieve_body( $response_media ),true);
+      if ( is_wp_error( $response_media ) ) {
+        $body_media['guid']['rendered'] = '';
+      }else{
+        $body_media = json_decode(wp_remote_retrieve_body( $response_media ),true);
+      }
       ?>
 
          <div data-test="col" class="col-sm-6 col-md-6 col-lg-4">
