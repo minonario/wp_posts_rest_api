@@ -30,16 +30,75 @@ class DS8_Latest_Posts {
             add_action('wp_ajax_load_posts_action', array($this, 'ajax_render_load_posts'));
             add_action('wp_ajax_nopriv_load_posts_action', array($this, 'ajax_render_load_posts'));
             add_filter('home_template', array($this,'load_cpt_template'), 10, 1);
+            add_filter('wpseo_title', array($this, 'dynamic_tags_seo_title'), 10, 1);
+            add_filter('wpseo_opengraph_title', array($this, 'dynamic_tags_seo_title'), 10, 1);
+            add_filter('wpseo_metadesc', array($this, 'dynamic_tags_seo_desc'), 10, 1);
+            add_filter('wpseo_opengraph_desc', array($this, 'dynamic_tags_seo_desc'), 10, 1);
+            add_filter('wpseo_canonical', array($this, 'dynamic_tags_seo_canonical'), 10, 1);
+            add_filter('wpseo_opengraph_url', array($this, 'dynamic_tags_seo_canonical'), 10, 1);
             
+        }
+        
+        public static function dynamic_tags_seo_canonical($title){
+          
+          $dictamen = get_query_var( 'dictamen' );
+          $informe = get_query_var( 'informe' );
+          $prospecto = get_query_var( 'prospecto' );
+          $providencia = get_query_var( 'providencia' );
+            
+          if ((!empty($dictamen) || !empty($informe) || !empty($prospecto) || !empty($providencia)) && $GLOBALS['bodyd'] !== null && $GLOBALS['bodyd'] !== false) {
+            $data = $GLOBALS['bodyd'];
+            $title = !empty($dictamen) ? site_url().'/dictamen/'.$data['slug'] : ( !empty($informe) ? site_url().'/informe/'.$data['slug'] : (!empty($prospecto) ? site_url().'/prospecto/'.$data['slug'] : site_url().'/providencia/'.$data['slug']));
+            return $title;
+          }  
+          
+          return $title;
+        }
+        
+        public static function dynamic_tags_seo_title($title){
+          
+          $dictamen = get_query_var( 'dictamen' );
+          $informe = get_query_var( 'informe' );
+          $prospecto = get_query_var( 'prospecto' );
+          $providencia = get_query_var( 'providencia' );
+            
+          if ((!empty($dictamen) || !empty($informe) || !empty($prospecto) || !empty($providencia)) && $GLOBALS['bodyd'] !== null && $GLOBALS['bodyd'] !== false) {
+            $data = $GLOBALS['bodyd'];
+            $title = isset($data['yoast_head_json']['og_title']) ? $data['yoast_head_json']['og_title'] : $title ;
+            return $title;
+          }  
+          
+          return $title;
+        }
+        
+        public static function dynamic_tags_seo_desc($title){
+          
+          $dictamen = get_query_var( 'dictamen' );
+          $informe = get_query_var( 'informe' );
+          $prospecto = get_query_var( 'prospecto' );
+          $providencia = get_query_var( 'providencia' );
+            
+          if ((!empty($dictamen) || !empty($informe) || !empty($prospecto) || !empty($providencia)) && $GLOBALS['bodyd'] !== null && $GLOBALS['bodyd'] !== false) {
+            $data = $GLOBALS['bodyd'];
+            $title = isset($data['yoast_head_json']['description']) ? $data['yoast_head_json']['description'] : (isset($data['yoast_head_json']['og_description']) ? $data['yoast_head_json']['og_description'] : $title) ;
+            return $title;
+          }  
+          
+          return $title;
         }
         
         public static function load_cpt_template($template) {
             global $post;
             $dictamen = get_query_var( 'dictamen' );
+            $informe = get_query_var( 'informe' );
             
-            if (!empty($dictamen) && $GLOBALS['bodyd'] !== null && $GLOBALS['bodyd'] !== false) {
+            if ((!empty($dictamen) || !empty($informe)) && $GLOBALS['bodyd'] !== null && $GLOBALS['bodyd'] !== false) {
                 $plugin_path = plugin_dir_path( __FILE__ );
-                $template_name = 'template-parts/singular.php';
+                if (!empty($dictamen)) {
+                  $template_name = 'template-parts/singular.php';
+                }else{
+                  $template_name = 'template-parts/singular-informe.php';
+                }
                 // A specific single template for my custom post type exists in theme folder? Or it also doesn't exist in my plugin?
                 if($template === get_stylesheet_directory() . '/' . $template_name
                     || !file_exists($plugin_path . $template_name)) {
@@ -71,11 +130,13 @@ class DS8_Latest_Posts {
                 $front_page = get_option('page_on_front');
                 
                 add_rewrite_rule( "dictamen/([a-z0-9-]+)[/]?$", 'index.php?dictamen=$matches[1]', 'top' );
+                add_rewrite_rule( "informe/([a-z0-9-]+)[/]?$", 'index.php?informe=$matches[1]', 'top' );
                 add_action('template_redirect', array('DS8_Latest_Posts', 'ds8_redirect') ); 
                 add_filter('redirect_canonical', array('DS8_Latest_Posts', 'canonical'), 10, 2);
         }
         public static function ds8_register_query_var($query_vars){
             $query_vars[] = 'dictamen';
+            $query_vars[] = 'informe';
             return $query_vars;
         }
 
@@ -85,9 +146,11 @@ class DS8_Latest_Posts {
         
         public static function ds8_redirect(){
             $dictamen = get_query_var( 'dictamen' );
+            $informe = get_query_var( 'informe' );
             
-            if (!empty($dictamen)) {
-                $response = wp_remote_get( self::$url_api.'/wp-json/wp/v2/posts?slug='.$dictamen);
+            
+            if (!empty($dictamen) || !empty($informe)) {
+                $response = wp_remote_get( self::$url_api.'/wp-json/wp/v2/posts?slug='.(!empty($dictamen) ? $dictamen : $informe));
                 $body_ds8     = json_decode(wp_remote_retrieve_body( $response ),true);
                 if (empty($body_ds8)){
                   $GLOBALS['bodyd'] = false;
@@ -119,6 +182,7 @@ class DS8_Latest_Posts {
 
             $response = wp_remote_get( self::$url_api.'/wp-json/wp/v2/posts/'.$idnoticia);
             $body     = json_decode(wp_remote_retrieve_body( $response ),true);
+            error_log("Envio de request API");
 
 
             $data = array('data' => array('content' => $body['content']['rendered'],
@@ -143,11 +207,22 @@ class DS8_Latest_Posts {
 
             $defaults = array(
                 'per_page' => 4,
+                'page'=> 1,
                 'categories' => '',
+                'pagination' => false,
                 'view' => 'news'
             );
             
-            $atts = array('view' => $type, 'categories' => $categories, 'per_page' => $per_page);
+            $atts = array('view' => $type, 'categories' => $categories, 'per_page' => $per_page, 'page' => $page);
+            
+            //if(isset($modal) && $modal == true){ }
+            
+            if(isset($year) && !empty($year)){
+              $before = date('c',strtotime("{$year}-12-31 23:59:59"));
+              $after = date('c',strtotime("{$year}-01-02 00:00:00"));
+              $atts['after']  = $after;
+              $atts['before'] = $before;
+            }
 
             $atts = wp_parse_args($atts, $defaults);
             $view = $atts['view'];
@@ -159,11 +234,16 @@ class DS8_Latest_Posts {
             $total = wp_remote_retrieve_header( $response, 'X-WP-Total' );
             $total_pages = wp_remote_retrieve_header( $response, 'X-WP-TotalPages' );
             
+            $code = wp_remote_retrieve_response_code($response);
+            error_log("Envio de request API code=".$code);
+            
             $body = json_decode(wp_remote_retrieve_body( $response ),true);
 
             ob_start();
-            if ($view === 'news') {
+            if ( str_starts_with($view, 'news')) {
               include('template-parts/latest-posts.php');
+            }elseif ($view === 'pagination') {
+              include('template-parts/latest-posts-pagination.php');
             }else{
               include('template-parts/latest-posts-cat.php');
             }
@@ -235,8 +315,13 @@ class DS8_Latest_Posts {
         public function shortcode_ajax($atts) {
             $defaults = array(
                 'per_page' => 4,
+                'page' => 1,
                 'categories' => '',
-                'view' => 'news'
+                'pagination' => false,
+                'year' => date("Y"),
+                'view' => 'news',
+                'modal' => true,
+                'custom-load' => ''
             );
 
             $atts = wp_parse_args($atts, $defaults);
@@ -244,8 +329,13 @@ class DS8_Latest_Posts {
             unset($atts['view']);
             
             if ($view === 'news') {
-              echo '<div class="news_ajax"><div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div></div>';
+              unset($atts['year']);
+              echo '<div class="news_'.$atts['custom-load'].'_ajax"><div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div></div>';
+              $view = $view.'_'.$atts['custom-load'];
+            }elseif ($view === 'pagination') {
+              echo '<div class="pagination_ajax"><div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div></div>';
             }else{
+              unset($atts['year']);
               echo '<div class="dictamenes_ajax"><div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div></div>';
             }
             
@@ -255,20 +345,47 @@ class DS8_Latest_Posts {
                 var type = '<?php echo $view ?>';
                 var category = '<?php echo $atts['categories'] ?>';
                 var per_page = '<?php echo $atts['per_page'] ?>';
-                $.ajax({
-                    url: lasts.ajaxurl,
-                    type: "POST",
-                    data: {
-                      action: 'load_posts_action',
-                      security: lasts.security,
-                      type: type,
-                      categories: category,
-                      per_page: per_page
-                    },  
-                    success: function (response) {
-                        $('.'+type+'_ajax').html(response['data']);
-                    }
+                var page = '<?php echo $atts['page'] ?>';
+                var pagination = '<?php echo $atts['pagination'] ?>';
+                var year = '<?php echo (isset ($atts['year']) ? $atts['year'] : '') ?>';
+                var modal = '<?php echo $atts['modal'] ?>';
+                
+                function ajaxCall(type,category,per_page,page,pagination,year){
+                  $.ajax({
+                      url: lasts.ajaxurl,
+                      type: "POST",
+                      data: {
+                        action: 'load_posts_action',
+                        security: lasts.security,
+                        type: type,
+                        categories: category,
+                        pagination: pagination,
+                        per_page: per_page,
+                        page: page,
+                        year: year,
+                        modal: modal
+                      },  
+                      success: function (response) {
+                          $('.'+type+'_ajax').html(response['data']);
+                      }
+                  });
+                }
+                ajaxCall(type,category,per_page,page,pagination);
+                
+                $(document).on('click','.eventpage', function(event){
+                  console.log('page='+$(this).data('page'));
+                  console.log('year='+year);
+                  $('.pagination_ajax').html('<div class="pagination_ajax"><div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div></div>');
+                  ajaxCall(type,category,per_page,$(this).data('page'),pagination,year);
                 });
+                $(document).on('change','.filtroPrensa', function(event){
+                  console.log('get_year='+$(this).val());
+                  year = $(this).val();
+                  $('.pagination_ajax').html('<div class="pagination_ajax"><div class="container-load-posts"><div class="spinner-border" role="status"><span class="sr-only">Cargando...</span></div></div></div>');
+                  ajaxCall(type,category,per_page,1,pagination,$(this).val());
+                });
+                
+                
               });
             </script>
             <?php

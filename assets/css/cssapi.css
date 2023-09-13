@@ -258,8 +258,8 @@ button.close {
 }
 .clearfix:before,
 .clearfix:after,
-.modal-header:before,
-.modal-header:after,
+/*.modal-header:before,*/
+/*.modal-header:after,*/
 .modal-footer:before,
 .modal-footer:after {
   display: table;
@@ -382,4 +382,25 @@ button.close {
     color: #09c;
     width: 2.5rem;
     height: 2.5rem;
+}
+.news_pagination_ajax {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+.news_pagination_ajax .spinner-border {
+    color: #09c;
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.form-group .form-control.filtroPrensa{
+  border-width: 1px;
+}
+.overflow-y-scroll {
+    overflow-y: scroll !important;
+}
+body.modal-open {
+    overflow: visible;
 }

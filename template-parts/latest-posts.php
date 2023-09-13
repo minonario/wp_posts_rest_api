@@ -17,11 +17,15 @@
           }
           $fecha = rest_parse_date($post['date']);
           $fecha = wp_date('F j, Y', $fecha);
+          $col_size = 12 / $atts['per_page'];
           ?>
-          <div class="ds8-post col-sm-6 col-md-4 col-lg-3">
-            <div class="card card-noticia" data-toggle="modal" target="#myModal" data-idnoticia="<?php echo $post['id']?>">
+          <div class="ds8-post <?php echo ($atts['per_page'] == 3 ? 'col-sm-12 col-md-6 col-lg-4' : 'col-sm-6 col-md-4 col-lg-3') ?>">
+            <?php if ($modal) : ?>
+            <a class="link" href="/informe/<?php echo $post['slug']; ?>">
+            <?php endif; ?>
+            <div class="card card-noticia <?php echo ($modal == 1 ? '' : 'noaction') ?>" <?php echo ($modal == 1 ? 'data-toggle="modal" target="#myModal"' : '') ?> data-idnoticia="<?php echo $post['id']?>">
                 <div class="view" data-test="view">
-                    <div class="Ripple-parent" style="touch-action: unset;">
+                    <div class="Ripple-parent <?php echo ($modal == 1 ? '' : 'noaction') ?>"" style="touch-action: unset;">
                       <img src="<?php echo $body_media['guid']['rendered']; ?>" class="img-fluid" alt="img" />
                       <div data-test="mask" class="mask rgba-white-slight"></div>
                       <div data-test="waves" class="Ripple " style="top: 0px; left: 0px; width: 0px; height: 0px;"></div>  
@@ -29,22 +33,31 @@
                 </div>
               <div data-test="card-body" class="card-body">
                 <p class="date"> <?php echo $fecha; ?> </p>
+                <?php if (!$modal) : ?>
                 <a href="<?php echo $post['link']; ?>" class="fd-name">
+                <?php endif; ?>
                 <h4 data-test="card-title" class="card-title"> <?php echo $post['title']['rendered']; ?> </h4>
+                <?php if (!$modal) : ?>
                 </a>
+                <?php endif; ?>
               </div>
             </div>
-                <?php //echo $post['excerpt']['rendered'] ?>
+            <?php if ($modal) : ?>
+            </a>
+            <?php endif; ?>
           </div>	
           <?php	
           endforeach;
           ?>
-</div>
+</div
+<?php if($modal): ?>
 <!-- Modal -->
 <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
   <div class="modal-lg modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
+        <span></span>
+        <button type="button" class="close btn-modal" aria-label="Close" data-dismiss="modal"><span aria-hidden="true">×</span></button>
       </div>
       <div class="modal-body">
         <div class="text-left"><h3 class="modalNoticia"></h3></div>
@@ -66,3 +79,4 @@
     </div>
   </div>
 </div>
+<?php endif; ?>
