@@ -6,13 +6,16 @@
 
 jQuery( function ( $ ) {
   
-  $(document).on('click','.card-noticia .Ripple-parent,.card-noticia .card-body,.fd-name', function(event){
+  $(document).on('click','.card-noticia .Ripple-parent:not(.noaction),.card-noticia .card-body,.fd-name', function(event){
     event.stopPropagation();
     event.preventDefault();
     //console.log($(event.target).closest('.card').attr('class'));
     var $this = $(event.target).closest('.card');
     //console.log('CC:'+$this.data("idnoticia"));
-    $('#myModal').modal('toggle',{ idnoticia: $this.data("idnoticia")});
+    console.log('action=='+$this.hasClass('noaction'));
+    if (!$this.hasClass('noaction')) {
+      $('#myModal').modal('toggle',{ idnoticia: $this.data("idnoticia")});
+    }
   });
   
   $(document).on('hidden.bs.modal','#myModal', function (e) {
