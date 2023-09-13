@@ -7,13 +7,13 @@
 jQuery( function ( $ ) {
   
   $(document).on('click','.card-noticia .Ripple-parent:not(.noaction),.card-noticia .card-body,.fd-name', function(event){
-    event.stopPropagation();
-    event.preventDefault();
     //console.log($(event.target).closest('.card').attr('class'));
     var $this = $(event.target).closest('.card');
     //console.log('CC:'+$this.data("idnoticia"));
-    console.log('action=='+$this.hasClass('noaction'));
+    //console.log('action=='+$this.hasClass('noaction'));
     if (!$this.hasClass('noaction')) {
+      event.stopPropagation();
+      event.preventDefault();
       $('#myModal').modal('toggle',{ idnoticia: $this.data("idnoticia")});
     }
   });
