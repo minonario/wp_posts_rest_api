@@ -404,3 +404,9 @@ button.close {
 body.modal-open {
     overflow: visible;
 }
+
+.page-fd .ds8-posts-container h3:after {
+  background: none;
+  width: initial;
+  content: none
+}

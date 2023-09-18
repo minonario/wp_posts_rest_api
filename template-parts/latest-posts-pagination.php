@@ -20,7 +20,7 @@
           ?>
           <div class="ds8-post col-sm-6 col-md-4 col-lg-3">
             <a class="link" href="/informe/<?php echo $post['slug']; ?>">
-            <div class="card card-noticia" data-idnoticia="<?php echo $post['id']?>">
+            <div class="card card-noticia noaction" data-idnoticia="<?php echo $post['id']?>">
                 <div class="view" data-test="view">
                     <div class="Ripple-parent noaction" style="touch-action: unset;">
                       <img src="<?php echo $body_media['guid']['rendered']; ?>" class="img-fluid" alt="img" />
@@ -34,7 +34,6 @@
               </div>
             </div>
             </a>
-                <?php //echo $post['excerpt']['rendered'] ?>
           </div>
           <?php	
           endforeach;
