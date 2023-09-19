@@ -36,7 +36,7 @@
                 <?php if (!$modal) : ?>
                 <a href="<?php echo $post['link']; ?>" class="fd-name">
                 <?php endif; ?>
-                <h4 data-test="card-title" class="card-title"> <?php echo $post['title']['rendered']; ?> </h4>
+                <h3 data-test="card-title" class="card-title"> <?php echo $post['title']['rendered']; ?> </h3>
                 <?php if (!$modal) : ?>
                 </a>
                 <?php endif; ?>

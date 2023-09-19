@@ -30,7 +30,7 @@
                      </div>
                   </div>
                   <div data-test="card-body" class="card-body">
-                     <h4 data-test="card-title" class="card-title"> <?php echo $post['title']['rendered']; ?> </h4>
+                     <h3 data-test="card-title" class="card-title"> <?php echo $post['title']['rendered']; ?> </h3>
                   </div>
                </div>
             </a>
